@@ -1,0 +1,17 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "cd src;make",
+            "args": []
+        },
+        {
+            "label": "make-clean",
+            "type": "shell",
+            "command": "make clean",
+            "args": []
+        }
+    ]
+}
