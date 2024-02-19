@@ -11,6 +11,20 @@ typedef struct Rectangle {
     Color color;
 } Rectangle;
 
-void render_FillScreenColor(SDL_Renderer* renderer, Color color);
-void render_BlankScreen(SDL_Renderer* renderer);
-void render_DrawRect(SDL_Renderer* renderer, Rectangle* rect);
+class Canvas
+{
+/*
+The purpose of this class is to manage the rendering of the game.
+*/
+
+SDL_Renderer* renderer;
+
+public:
+
+    explicit Canvas(SDL_Renderer* renderer);
+    ~Canvas();
+
+    void FillScreenColor(Color color);
+    void BlankScreen();
+    void DrawRect(Rectangle* rect);
+};

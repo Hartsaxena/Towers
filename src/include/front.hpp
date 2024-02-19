@@ -15,11 +15,46 @@ typedef struct front_MouseState {
     int x, y;
 } front_MouseState;
 
-extern SDL_Window* front_Window;
-extern SDL_Renderer* front_Renderer;
-extern SDL_Rect front_WinRect;
 
-void front_Quit();
-int front_Init();
-front_MouseState* front_InitMouseState();
-bool front_HandleInputs(SDL_Event* inputEvent, bool inputKeys[286], front_MouseState* mouseState);
+// Forward declarations of classes so that they can reference each other.
+class FrontendManager;
+class InputManager;
+
+
+class InputManager
+{
+/*
+The purpose of this class is to manage inputs of the game.
+*/
+
+public:
+    bool inputKeys[286];
+
+    SDL_Event* inputEvent;
+    front_MouseState* mouseState;
+
+    InputManager();
+    ~InputManager();
+
+    bool HandleInputs();
+    front_MouseState* InitMouseState();
+};
+
+
+class FrontendManager
+{
+/*
+The purpose of this class is to manage the frontend of the game.
+*/
+
+public:
+    SDL_Window* window;
+    SDL_Renderer* renderer;
+    SDL_Rect winRect;
+
+    FrontendManager();
+    ~FrontendManager();
+
+    void PresentRenderer();
+    void PauseDelay();
+};

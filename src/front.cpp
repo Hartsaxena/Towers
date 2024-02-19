@@ -7,61 +7,89 @@ This file contains methods that manage the SDL2 library, which is used as the fr
 #include "front.hpp"
 
 
-SDL_Window* front_Window;
-SDL_Renderer* front_Renderer;
-SDL_Rect front_WinRect = {0, 0, front_SCREENX, front_SCREENY};
 
-
-void front_Quit()
-{
-    /*
-    This function quits the SDL2 library and the program as a whole.
-    */
-    if (front_Window != NULL) {
-        SDL_DestroyWindow(front_Window);
-        SDL_DestroyRenderer(front_Renderer);
-    }
-    SDL_Quit();
-    exit(0);
-}
-
-
-int front_Init()
+FrontendManager::FrontendManager()
 {
     /*
     This function initializes the SDL2 library. It creates a window and renderer, and returns 0 if successful, or -1 if not.
     */
+  
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) { // Initialize SDL
         std::cout<<"Failed to initialize SDL.\n";
         std::cout<<SDL_GetError();
-        return -1;
+        SDL_Quit();
+        exit(1);
     }
 
-    front_Window = SDL_CreateWindow(front_WINDOWTITLE,
+    this->window = SDL_CreateWindow(front_WINDOWTITLE,
                                     SDL_WINDOWPOS_UNDEFINED,
                                     SDL_WINDOWPOS_UNDEFINED,
                                     front_SCREENX, front_SCREENY,
                                     SDL_WINDOW_SHOWN);
-    if (front_Window == NULL) {
+    if (this->window == NULL) {
         std::cout<<"FATAL ERROR: Window could not be displayed.\n";
-        return -1;
+        std::cout<<SDL_GetError();
+        SDL_Quit();
+        exit(1); // Quit the program
     }
-    front_Renderer = SDL_CreateRenderer(front_Window, -1, SDL_RENDERER_ACCELERATED);
-
-    return 0;
+    this->renderer = SDL_CreateRenderer(this->window, -1, SDL_RENDERER_ACCELERATED);
+    this->winRect = (SDL_Rect)
+    {.x = 0, .y = 0,
+     .w = front_SCREENX, .h = front_SCREENY};
 }
 
 
-front_MouseState* front_InitMouseState()
+FrontendManager::~FrontendManager()
 {
     /*
-    This function creates and initializes a MouseState struct.
+    Destructor for the FrontendManager class.
+    Quits SDL2 and frees memory.
+    */
+    if (this->window != NULL) {
+        SDL_DestroyWindow(this->window);
+        SDL_DestroyRenderer(this->renderer);
+    }
+    SDL_Quit();
+}
+
+
+void FrontendManager::PresentRenderer()
+{
+    /*
+    This function presents the renderer to the window.
+    */
+    SDL_RenderPresent(this->renderer);
+}
+
+void FrontendManager::PauseDelay()
+{
+    /*
+    This function pauses the game for a short time, to limit the frame rate.
+    */
+    SDL_Delay(front_FRAMEPAUSEDELAY);
+}
+
+
+
+InputManager::InputManager()
+{
+    /*
+    Constructor for the InputManager class.
     */
 
+    for (int i = 0; i < 286; i++)
+        this->inputKeys[i] = false;
+
+    this->inputEvent = new SDL_Event;
+    if (this->inputEvent == NULL) {
+        std::cout<<"Failed to allocate memory for input event data.\n";
+        exit(1);
+    }
+    
     front_MouseState* MouseState = new front_MouseState;
     if (MouseState == NULL) {
         std::cout<<"Failed to allocate memory for Mouse State data.\n";
-        front_Quit();
+        exit(1);
     }
    
     for (int i = 0; i < 5; i++)
@@ -69,38 +97,49 @@ front_MouseState* front_InitMouseState()
     MouseState->x = 0;
     MouseState->y = 0;
 
-    return MouseState;
+    this->mouseState = MouseState;
 }
 
 
-bool front_HandleInputs(SDL_Event* inputEvent, bool inputKeys[286], front_MouseState* mouseState)
+InputManager::~InputManager()
+{
+    /*
+    Destructor for the InputManager class.
+    Frees memory.
+    */
+    delete this->inputEvent;
+    delete this->mouseState;
+}
+
+
+bool InputManager::HandleInputs()
 {
     /*
     This function handles all input events. It returns true if the game should continue running, false if it should quit.
     */
     bool IsRunning = true;
-    while (SDL_PollEvent(inputEvent) > 0) {
+    while (SDL_PollEvent(this->inputEvent) > 0) {
         switch (inputEvent->type) {
             case SDL_KEYDOWN: {
-                inputKeys[inputEvent->key.keysym.scancode] = true;
+                this->inputKeys[inputEvent->key.keysym.scancode] = true;
                 break;
             }
             case SDL_KEYUP: {
-                inputKeys[inputEvent->key.keysym.scancode] = false;
+                this->inputKeys[inputEvent->key.keysym.scancode] = false;
                 break;
             }
             
             case SDL_MOUSEBUTTONDOWN: {
-                mouseState->ButtonStates[inputEvent->button.button] = true;
+                this->mouseState->ButtonStates[inputEvent->button.button] = true;
                 break;
             }
             case SDL_MOUSEBUTTONUP: {
-                mouseState->ButtonStates[inputEvent->button.button] = false;
+                this->mouseState->ButtonStates[inputEvent->button.button] = false;
                 break;
             }
             case SDL_MOUSEMOTION: {
-                mouseState->x = inputEvent->motion.x;
-                mouseState->y = inputEvent->motion.y;
+                this->mouseState->x = inputEvent->motion.x;
+                this->mouseState->y = inputEvent->motion.y;
                 break;
             }
 
